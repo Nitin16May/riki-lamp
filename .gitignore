@@ -1,0 +1,13 @@
+# Arduino
+*.elf
+*.bin
+*.hex
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Build folders
+build/
