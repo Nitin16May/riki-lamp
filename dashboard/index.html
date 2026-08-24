@@ -925,7 +925,18 @@
             else if (msgType === "light") {
                 try {
                     const data = JSON.parse(rawPayload);
-                    appendLog(`Light update from <strong>${lamp}</strong>: ${rawPayload}`, "color-change");
+                    const displayName = lamp.charAt(0).toUpperCase() + lamp.slice(1);
+                    
+                    if (data.type === "colour" && data.colour) {
+                        const colKey = data.colour.toUpperCase();
+                        const hex = COLOR_MAP[colKey] || "#FFFFFF";
+                        appendLog(`<strong>${displayName}</strong> set color to <strong style="color: ${hex}; text-shadow: 0 0 8px ${hex}80">${colKey}</strong>`, "color-change");
+                    } else if (data.type === "effect" && data.effect) {
+                        const effName = data.effect.toUpperCase();
+                        appendLog(`<strong>${displayName}</strong> set effect to <strong style="background: linear-gradient(90deg, #ff5e7e, #ff9f68); -webkit-background-clip: text; -webkit-text-fill-color: transparent">${effName}</strong>`, "color-change");
+                    } else {
+                        appendLog(`Light update from <strong>${displayName}</strong>: ${rawPayload}`, "color-change");
+                    }
                     
                     // Assume device is online if it sends light messages
                     updateLampUI(lamp, "ONLINE", data);
