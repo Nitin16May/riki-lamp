@@ -553,39 +553,26 @@
         <!-- Panel 1: Live Status Dashboard -->
         <div id="panel-dashboard" class="tab-panel active">
             <div class="dashboard-grid">
-                <!-- Chakri's Lamp Card -->
-                <div id="card-chakri" class="glass-card lamp-card">
-                    <div class="lamp-header">
-                        <span class="lamp-title">Chakri's Lamp</span>
-                        <div id="status-chakri" class="lamp-status-text offline">
-                            <span class="lamp-status-dot"></span> Offline
+                <!-- Unified Lamp Card -->
+                <div id="card-unified" class="glass-card lamp-card full-width">
+                    <div class="lamp-header" style="flex-direction: column; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 16px; width: 100%;">
+                        <span class="lamp-title" style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #FF9F68, #FF5E7E); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">RiKi Lamp Status</span>
+                        <div class="user-statuses" style="display: flex; gap: 16px; width: 100%; justify-content: center;">
+                            <div id="status-chakri" class="lamp-status-text offline">
+                                Chakri: Offline
+                            </div>
+                            <div id="status-nikki" class="lamp-status-text offline">
+                                Nikki: Offline
+                            </div>
                         </div>
                     </div>
                     <div class="lamp-body">
                         <div class="virtual-bulb">💡</div>
-                        <div class="state-desc" id="desc-chakri">Currently powered off or disconnected.</div>
+                        <div class="state-desc" id="desc-unified" style="margin-top: 8px;">Waiting for lamp updates...</div>
                     </div>
                     <div class="signification-card">
-                        <div class="signification-label">Current Mood / News</div>
-                        <div class="signification-value" id="signify-chakri">Offline</div>
-                    </div>
-                </div>
-
-                <!-- Nikki's Lamp Card -->
-                <div id="card-nikki" class="glass-card lamp-card">
-                    <div class="lamp-header">
-                        <span class="lamp-title">Nikki's Lamp</span>
-                        <div id="status-nikki" class="lamp-status-text offline">
-                            <span class="lamp-status-dot"></span> Offline
-                        </div>
-                    </div>
-                    <div class="lamp-body">
-                        <div class="virtual-bulb">💡</div>
-                        <div class="state-desc" id="desc-nikki">Currently powered off or disconnected.</div>
-                    </div>
-                    <div class="signification-card">
-                        <div class="signification-label">Current Mood / News</div>
-                        <div class="signification-value" id="signify-nikki">Offline</div>
+                        <div class="signification-label">Current Mood / Significance</div>
+                        <div class="signification-value" id="signify-unified">Offline</div>
                     </div>
                 </div>
 
@@ -805,58 +792,88 @@
             }
         }
 
+        // --- State Tracking ---
+        let activeColorState = null;
+        let activeEffectState = null;
+        let chakriOnline = false;
+        let nikkiOnline = false;
+
         // --- Update UI State ---
         function updateLampUI(lamp, status, lightState = null) {
-            const card = document.getElementById(`card-${lamp}`);
-            const statusLabel = document.getElementById(`status-${lamp}`);
-            const desc = document.getElementById(`desc-${lamp}`);
-            const signify = document.getElementById(`signify-${lamp}`);
+            // Update individual connection flags
+            if (lamp === "chakri") {
+                chakriOnline = (status.toUpperCase() === "ONLINE");
+                const label = document.getElementById("status-chakri");
+                if (chakriOnline) {
+                    label.className = "lamp-status-text online";
+                    label.innerHTML = `Chakri: Online 🟢`;
+                } else {
+                    label.className = "lamp-status-text offline";
+                    label.innerHTML = `Chakri: Offline 🔴`;
+                }
+            } else if (lamp === "nikki") {
+                nikkiOnline = (status.toUpperCase() === "ONLINE");
+                const label = document.getElementById("status-nikki");
+                if (nikkiOnline) {
+                    label.className = "lamp-status-text online";
+                    label.innerHTML = `Nikki: Online 🟢`;
+                } else {
+                    label.className = "lamp-status-text offline";
+                    label.innerHTML = `Nikki: Offline 🔴`;
+                }
+            }
+
+            const card = document.getElementById("card-unified");
+            const desc = document.getElementById("desc-unified");
+            const signify = document.getElementById("signify-unified");
             const bulb = card.querySelector('.virtual-bulb');
 
-            // 1. Connection status
-            if (status.toUpperCase() === "ONLINE") {
-                statusLabel.className = "lamp-status-text online";
-                statusLabel.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--neon-green); display: inline-block; box-shadow: 0 0 6px var(--neon-green)"></span> Online`;
-            } else {
-                statusLabel.className = "lamp-status-text offline";
-                statusLabel.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-secondary); display: inline-block;"></span> Offline`;
+            // Determine if either is online
+            const isAnyoneOnline = chakriOnline || nikkiOnline;
+
+            // If a light update arrived, update the state
+            if (lightState) {
+                let displayType = lightState.type || "colour";
+                let val = (lightState.colour || lightState.effect || "WHITE").toUpperCase();
                 
-                // Clear colors when offline
+                // Store active state
+                activeColorState = val;
+                activeEffectState = displayType;
+            }
+
+            if (!isAnyoneOnline) {
+                // Clear state when both are offline
                 card.classList.remove('active-glow', 'rainbow-active');
                 card.style.removeProperty('--glow-color');
                 card.style.removeProperty('--glow-color-soft');
                 card.style.removeProperty('--glow-color-border');
                 bulb.innerHTML = "💡";
-                desc.innerText = "Currently powered off or disconnected.";
+                desc.innerText = "Both lamps are currently offline.";
                 signify.innerText = "Offline";
                 return;
             }
 
-            // 2. Light status
-            if (lightState) {
-                let displayType = lightState.type || "colour";
-                let val = (lightState.colour || lightState.effect || "WHITE").toUpperCase();
+            // Display active color/effect if anyone is online
+            const val = activeColorState || "WHITE";
+            const displayType = activeEffectState || "colour";
+            
+            const definition = MOOD_DICT[val] || { text: "Glowing", emoji: "💡" };
 
-                // Find definition mapping
-                const definition = MOOD_DICT[val] || { text: "Glowing", emoji: "💡" };
+            card.classList.add('active-glow');
+            bulb.innerHTML = definition.emoji;
 
-                // Apply visual transitions
-                card.classList.add('active-glow');
-                bulb.innerHTML = definition.emoji;
-
-                if (val === "RAINBOW") {
-                    card.classList.add('rainbow-active');
-                } else {
-                    card.classList.remove('rainbow-active');
-                    const colorHex = COLOR_MAP[val] || "#FFFFFF";
-                    card.style.setProperty('--glow-color', colorHex);
-                    card.style.setProperty('--glow-color-soft', colorHex + "4D"); // 30% opacity
-                    card.style.setProperty('--glow-color-border', colorHex + "80"); // 50% opacity
-                }
-
-                desc.innerText = `Displaying ${displayType}: ${val}`;
-                signify.innerText = definition.text;
+            if (val === "RAINBOW") {
+                card.classList.add('rainbow-active');
+            } else {
+                card.classList.remove('rainbow-active');
+                const colorHex = COLOR_MAP[val] || "#FFFFFF";
+                card.style.setProperty('--glow-color', colorHex);
+                card.style.setProperty('--glow-color-soft', colorHex + "4D");
+                card.style.setProperty('--glow-color-border', colorHex + "80");
             }
+
+            desc.innerText = `Active State: ${val} (${displayType === 'colour' ? 'Color' : 'Effect'})`;
+            signify.innerText = definition.text;
         }
 
         // --- MQTT Connection Init ---
