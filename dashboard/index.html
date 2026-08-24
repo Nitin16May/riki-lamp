@@ -869,8 +869,20 @@
                 return;
             }
 
+            if (!activeColorState) {
+                // Online but waiting for first state update
+                card.classList.remove('active-glow', 'rainbow-active');
+                card.style.removeProperty('--glow-color');
+                card.style.removeProperty('--glow-color-soft');
+                card.style.removeProperty('--glow-color-border');
+                bulb.innerHTML = "💡";
+                desc.innerText = "Lamps are connected. Waiting for first update...";
+                signify.innerText = "Connected & Idle";
+                return;
+            }
+
             // Display active color/effect if anyone is online
-            const val = activeColorState || "WHITE";
+            const val = activeColorState;
             const displayType = activeEffectState || "colour";
             
             const definition = MOOD_DICT[val] || { text: "Glowing", emoji: "💡" };
