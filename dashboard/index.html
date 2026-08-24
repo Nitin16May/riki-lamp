@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiKi Lamp Portal</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- MQTT over WebSockets Client Library -->
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0A0D14;
+            --card-bg: rgba(20, 24, 35, 0.6);
+            --border-color: rgba(255, 255, 255, 0.07);
+            --text-primary: #FFFFFF;
+            --text-secondary: #9AA5B1;
+            --neon-green: #34C759;
+            --neon-red: #FF3B30;
+            --accent-glow: rgba(255, 255, 255, 0.05);
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(78, 101, 255, 0.08) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(146, 239, 253, 0.08) 0px, transparent 50%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 24px;
+        }
+
+        /* --- Container --- */
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin-top: 12px;
+        }
+
+        .logo-section h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FF5E7E, #FF9F68);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-section h1 span {
+            font-size: 20px;
+            -webkit-text-fill-color: initial;
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .connection-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            box-shadow: 0 0 8px var(--text-secondary);
+        }
+
+        .connection-badge.connecting .dot {
+            background-color: #FFCC00;
+            box-shadow: 0 0 10px #FFCC00;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .connection-badge.connected {
+            color: var(--neon-green);
+            border-color: rgba(52, 199, 89, 0.2);
+            background: rgba(52, 199, 89, 0.05);
+        }
+
+        .connection-badge.connected .dot {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .connection-badge.disconnected {
+            color: var(--neon-red);
+            border-color: rgba(255, 59, 48, 0.2);
+            background: rgba(255, 59, 48, 0.05);
+        }
+
+        .connection-badge.disconnected .dot {
+            background-color: var(--neon-red);
+            box-shadow: 0 0 10px var(--neon-red);
+        }
+
+        /* --- Navigation Tabs --- */
+        .tabs-nav {
+            display: flex;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 6px;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- Content Panels --- */
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* --- Dashboard Panel Grid --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        /* --- Glass Cards --- */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+        }
+
+        /* --- Lamp Status Card --- */
+        .lamp-card {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .lamp-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 24px;
+            pointer-events: none;
+            box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.02);
+            transition: box-shadow 0.6s ease;
+        }
+
+        /* Dynamic light glow on hover/active */
+        .lamp-card.active-glow::after {
+            box-shadow: inset 0 0 40px var(--glow-color, rgba(255, 255, 255, 0.05)),
+                        0 0 30px var(--glow-color-soft, rgba(255, 255, 255, 0));
+            border: 1px solid var(--glow-color-border, var(--border-color));
+        }
+
+        .lamp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lamp-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .lamp-status-text {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .lamp-status-text.online {
+            color: var(--neon-green);
+        }
+
+        .lamp-status-text.offline {
+            color: var(--text-secondary);
+        }
+
+        .lamp-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 0;
+            gap: 16px;
+        }
+
+        /* Virtual bulb icon */
+        .virtual-bulb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .virtual-bulb::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            opacity: 0;
+            transition: all 0.6s ease;
+        }
+
+        .lamp-card.active-glow .virtual-bulb {
+            background: var(--glow-color, #FFFFFF);
+            border-color: var(--glow-color, #FFFFFF);
+            box-shadow: 0 0 35px var(--glow-color, #FFFFFF),
+                        0 0 65px var(--glow-color-soft, #FFFFFF);
+            transform: scale(1.08);
+        }
+
+        .lamp-card.active-glow.rainbow-active .virtual-bulb {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 400% 400%;
+            border-color: transparent;
+            animation: rainbowGradient 8s ease infinite, pulseGlow 2s infinite alternate;
+        }
+
+        .lamp-card.active-glow.rainbow-active::after {
+            border-color: rgba(255, 100, 150, 0.2);
+            box-shadow: inset 0 0 30px rgba(255, 100, 150, 0.1);
+        }
+
+        .state-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .signification-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.4s ease;
+        }
+
+        .signification-card.active-state {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .signification-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .signification-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* --- Live Activity Log --- */
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .log-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Scrollbar customisation */
+        .log-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .log-item {
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.01);
+            border-left: 3px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        .log-item.info { border-left-color: #FFCC00; }
+        .log-item.color-change { border-left-color: #8B00FF; }
+        .log-item.offline-event { border-left-color: var(--neon-red); }
+        .log-item.online-event { border-left-color: var(--neon-green); }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        /* --- Color Dictionary Tab --- */
+        .dictionary-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 600px) {
+            .dictionary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 900px) {
+            .dictionary-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .dict-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .dict-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .dict-color-swatch {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .dict-card.rainbow .dict-color-swatch {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 200% 200%;
+            animation: rainbowGradient 4s ease infinite;
+        }
+
+        .dict-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dict-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .dict-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 25px rgba(255, 100, 150, 0.4); }
+            100% { box-shadow: 0 0 50px rgba(255, 100, 150, 0.7); }
+        }
+
+        @keyframes rainbowGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="logo-section">
+                <h1><span>❤️</span> RiKi Lamp Portal</h1>
+            </div>
+            <div id="mqtt-badge" class="connection-badge connecting">
+                <div class="dot"></div>
+                <span id="mqtt-badge-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Live Status</button>
+            <button class="tab-btn" onclick="switchTab('dictionary')">Color Meanings</button>
+        </div>
+
+        <!-- Panel 1: Live Status Dashboard -->
+        <div id="panel-dashboard" class="tab-panel active">
+            <div class="dashboard-grid">
+                <!-- Chakri's Lamp Card -->
+                <div id="card-chakri" class="glass-card lamp-card">
+                    <div class="lamp-header">
+                        <span class="lamp-title">Chakri's Lamp</span>
+                        <div id="status-chakri" class="lamp-status-text offline">
+                            <span class="lamp-status-dot"></span> Offline
+                        </div>
+                    </div>
+                    <div class="lamp-body">
+                        <div class="virtual-bulb">💡</div>
+                        <div class="state-desc" id="desc-chakri">Currently powered off or disconnected.</div>
+                    </div>
+                    <div class="signification-card">
+                        <div class="signification-label">Current Mood / News</div>
+                        <div class="signification-value" id="signify-chakri">Offline</div>
+                    </div>
+                </div>
+
+                <!-- Nikki's Lamp Card -->
+                <div id="card-nikki" class="glass-card lamp-card">
+                    <div class="lamp-header">
+                        <span class="lamp-title">Nikki's Lamp</span>
+                        <div id="status-nikki" class="lamp-status-text offline">
+                            <span class="lamp-status-dot"></span> Offline
+                        </div>
+                    </div>
+                    <div class="lamp-body">
+                        <div class="virtual-bulb">💡</div>
+                        <div class="state-desc" id="desc-nikki">Currently powered off or disconnected.</div>
+                    </div>
+                    <div class="signification-card">
+                        <div class="signification-label">Current Mood / News</div>
+                        <div class="signification-value" id="signify-nikki">Offline</div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="glass-card full-width">
+                    <div class="log-header">
+                        <div class="log-title">📋 Live Activity Log</div>
+                    </div>
+                    <div class="log-container" id="log-list">
+                        <!-- Logs appended here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Color Dictionary -->
+        <div id="panel-dictionary" class="tab-panel">
+            <div class="glass-card">
+                <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">🎨 Color & Effect Meanings</h2>
+                <div class="dictionary-grid">
+                    <!-- Rainbow -->
+                    <div class="dict-card rainbow">
+                        <div class="dict-color-swatch">☕️</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Rainbow</span>
+                            <span class="dict-desc">I have tea to share! (Juicy news / gossip convo time)</span>
+                        </div>
+                    </div>
+
+                    <!-- Red -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #FF3B30;">❤️</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Red</span>
+                            <span class="dict-desc">Thinking of you right now.</span>
+                        </div>
+                    </div>
+
+                    <!-- Pink -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #FF2D55;">🌸</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Pink</span>
+                            <span class="dict-desc">Missing you terribly.</span>
+                        </div>
+                    </div>
+
+                    <!-- Green -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #34C759;">📞</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Green</span>
+                            <span class="dict-desc">Free to talk, let's call!</span>
+                        </div>
+                    </div>
+
+                    <!-- Blue -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #007AFF;">🎬</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Blue</span>
+                            <span class="dict-desc">Watching a movie / busy.</span>
+                        </div>
+                    </div>
+
+                    <!-- Yellow -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #FFCC00;">☀️</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Yellow</span>
+                            <span class="dict-desc">Happy / had a great day.</span>
+                        </div>
+                    </div>
+
+                    <!-- Orange -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #FF9500;">🫂</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Orange</span>
+                            <span class="dict-desc">Sending you a warm virtual hug.</span>
+                        </div>
+                    </div>
+
+                    <!-- Purple -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #AF52DE;">📚</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Purple</span>
+                            <span class="dict-desc">Let's study / focus together.</span>
+                        </div>
+                    </div>
+
+                    <!-- Teal -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: #5AC8FA;">🛌</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Teal</span>
+                            <span class="dict-desc">Tired / heading off to rest.</span>
+                        </div>
+                    </div>
+
+                    <!-- Heartbeat -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: linear-gradient(135deg, #FF5E7E, #FF2D55);">💓</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Heartbeat (Effect)</span>
+                            <span class="dict-desc">My heart beats for you.</span>
+                        </div>
+                    </div>
+
+                    <!-- Candle -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: linear-gradient(135deg, #FF9500, #FFD700);">🕯️</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Candle (Effect)</span>
+                            <span class="dict-desc">Cozy vibes / winding down.</span>
+                        </div>
+                    </div>
+
+                    <!-- Meteor -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: linear-gradient(135deg, #5AC8FA, #007AFF);">🌠</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Meteor (Effect)</span>
+                            <span class="dict-desc">Make a wish!</span>
+                        </div>
+                    </div>
+
+                    <!-- Twinkle -->
+                    <div class="dict-card">
+                        <div class="dict-color-swatch" style="background: linear-gradient(135deg, #AF52DE, #5AC8FA);">😴</div>
+                        <div class="dict-info">
+                            <span class="dict-name">Twinkle (Effect)</span>
+                            <span class="dict-desc">Sweet dreams / heading to sleep.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripting and MQTT Web Client Connection -->
+    <script>
+        // --- Configuration ---
+        const BROKER_HOST = "1ea6ac40907c404eb1eb3edfd51eedce.s1.eu.hivemq.cloud";
+        const BROKER_PORT = 8884; // WebSockets SSL port
+        const BROKER_PATH = "/mqtt";
+        const USERNAME = "rikilamp";
+        const PASSWORD = "ChakriLovesNikki2903";
+
+        // --- Color Hex Map ---
+        const COLOR_MAP = {
+            "WHITE": "#FFFFFF",
+            "WARM_WHITE": "#FFE7C4",
+            "RED": "#FF3B30",
+            "GREEN": "#34C759",
+            "BLUE": "#007AFF",
+            "YELLOW": "#FFCC00",
+            "ORANGE": "#FF9500",
+            "PINK": "#FF2D55",
+            "PURPLE": "#AF52DE",
+            "CYAN": "#5AC8FA",
+            "MAGENTA": "#FF2D55",
+            "LIME": "#4CD964",
+            "TEAL": "#5AC8FA",
+            "SKY_BLUE": "#5AC8FA",
+            "VIOLET": "#AF52DE",
+            "GOLD": "#FFD700"
+        };
+
+        // --- Mood Dictionary ---
+        const MOOD_DICT = {
+            // Colors
+            "WHITE": { text: "Cozy & glowing", emoji: "💡" },
+            "WARM_WHITE": { text: "Chilling / relaxing", emoji: "☕" },
+            "RED": { text: "Thinking of you!", emoji: "❤️" },
+            "GREEN": { text: "Free to talk, let's call!", emoji: "📞" },
+            "BLUE": { text: "Watching a movie / busy", emoji: "🎬" },
+            "YELLOW": { text: "Happy / had a great day!", emoji: "☀️" },
+            "ORANGE": { text: "Sending you a warm hug", emoji: "🫂" },
+            "PINK": { text: "Missing you terribly", emoji: "🌸" },
+            "PURPLE": { text: "Let's study/focus together", emoji: "📚" },
+            "TEAL": { text: "Tired / heading off to rest", emoji: "🛌" },
+            // Effects
+            "RAINBOW": { text: "I have tea to share! (Convo time)", emoji: "☕️" },
+            "HEARTBEAT": { text: "My heart beats for you", emoji: "💓" },
+            "CANDLE": { text: "Cozy candlelit vibes", emoji: "🕯️" },
+            "METEOR": { text: "Make a wish!", emoji: "🌠" },
+            "TWINKLE": { text: "Sweet dreams / sleeping", emoji: "😴" }
+        };
+
+        // --- Tabs Navigation ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            const selectedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabName));
+            if (selectedBtn) selectedBtn.classList.add('active');
+
+            const targetPanel = document.getElementById(`panel-${tabName}`);
+            if (targetPanel) targetPanel.classList.add('active');
+        }
+
+        // --- Visual Log Append helper ---
+        function appendLog(message, type = 'info') {
+            const logList = document.getElementById('log-list');
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            const item = document.createElement('div');
+            item.className = `log-item ${type}`;
+            item.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+            
+            logList.insertBefore(item, logList.firstChild);
+
+            // Keep maximum of 50 log items
+            while (logList.children.length > 50) {
+                logList.removeChild(logList.lastChild);
+            }
+        }
+
+        // --- Update UI State ---
+        function updateLampUI(lamp, status, lightState = null) {
+            const card = document.getElementById(`card-${lamp}`);
+            const statusLabel = document.getElementById(`status-${lamp}`);
+            const desc = document.getElementById(`desc-${lamp}`);
+            const signify = document.getElementById(`signify-${lamp}`);
+            const bulb = card.querySelector('.virtual-bulb');
+
+            // 1. Connection status
+            if (status.toUpperCase() === "ONLINE") {
+                statusLabel.className = "lamp-status-text online";
+                statusLabel.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--neon-green); display: inline-block; box-shadow: 0 0 6px var(--neon-green)"></span> Online`;
+            } else {
+                statusLabel.className = "lamp-status-text offline";
+                statusLabel.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-secondary); display: inline-block;"></span> Offline`;
+                
+                // Clear colors when offline
+                card.classList.remove('active-glow', 'rainbow-active');
+                card.style.removeProperty('--glow-color');
+                card.style.removeProperty('--glow-color-soft');
+                card.style.removeProperty('--glow-color-border');
+                bulb.innerHTML = "💡";
+                desc.innerText = "Currently powered off or disconnected.";
+                signify.innerText = "Offline";
+                return;
+            }
+
+            // 2. Light status
+            if (lightState) {
+                let displayType = lightState.type || "colour";
+                let val = (lightState.colour || lightState.effect || "WHITE").toUpperCase();
+
+                // Find definition mapping
+                const definition = MOOD_DICT[val] || { text: "Glowing", emoji: "💡" };
+
+                // Apply visual transitions
+                card.classList.add('active-glow');
+                bulb.innerHTML = definition.emoji;
+
+                if (val === "RAINBOW") {
+                    card.classList.add('rainbow-active');
+                } else {
+                    card.classList.remove('rainbow-active');
+                    const colorHex = COLOR_MAP[val] || "#FFFFFF";
+                    card.style.setProperty('--glow-color', colorHex);
+                    card.style.setProperty('--glow-color-soft', colorHex + "4D"); // 30% opacity
+                    card.style.setProperty('--glow-color-border', colorHex + "80"); // 50% opacity
+                }
+
+                desc.innerText = `Displaying ${displayType}: ${val}`;
+                signify.innerText = definition.text;
+            }
+        }
+
+        // --- MQTT Connection Init ---
+        appendLog("Initializing portal setup...");
+
+        const clientID = 'riki-portal-' + Math.random().toString(16).substring(2, 10);
+        const brokerUrl = `wss://${BROKER_HOST}:${BROKER_PORT}${BROKER_PATH}`;
+        
+        const badge = document.getElementById('mqtt-badge');
+        const badgeText = document.getElementById('mqtt-badge-text');
+
+        const options = {
+            username: USERNAME,
+            password: PASSWORD,
+            clientId: clientID,
+            connectTimeout: 5000,
+            keepalive: 60,
+            clean: true
+        };
+
+        appendLog("Connecting to HiveMQ Cloud MQTT Broker...");
+        const client = mqtt.connect(brokerUrl, options);
+
+        client.on('connect', () => {
+            badge.className = "connection-badge connected";
+            badgeText.innerText = "Synced Live";
+            appendLog("Connected to MQTT broker successfully.", "online-event");
+
+            // Subscribe to all RiKi channels
+            client.subscribe("riki/v1/#", (err) => {
+                if (!err) {
+                    appendLog("Subscribed to MQTT topics successfully.");
+                } else {
+                    appendLog("Subscription error: " + err.message, "offline-event");
+                }
+            });
+        });
+
+        client.on('error', (err) => {
+            badge.className = "connection-badge disconnected";
+            badgeText.innerText = "Error";
+            appendLog("MQTT Connection Error: " + err.message, "offline-event");
+        });
+
+        client.on('offline', () => {
+            badge.className = "connection-badge disconnected";
+            badgeText.innerText = "Offline";
+            appendLog("Lost connection to broker. Reconnecting...", "info");
+        });
+
+        // --- Handle Incoming MQTT Messages ---
+        client.on('message', (topic, payload) => {
+            const rawPayload = payload.toString().trim();
+            const parts = topic.split('/');
+            
+            if (parts.length < 4) return;
+
+            const lamp = parts[2];     // 'chakri' or 'nikki'
+            const msgType = parts[3];  // 'status' or 'light'
+
+            if (msgType === "status") {
+                const status = rawPayload.toUpperCase();
+                appendLog(`Status update: <strong>${lamp}</strong> is now <strong>${status}</strong>`, status === "ONLINE" ? "online-event" : "offline-event");
+                updateLampUI(lamp, status);
+            } 
+            else if (msgType === "light") {
+                try {
+                    const data = JSON.parse(rawPayload);
+                    appendLog(`Light update from <strong>${lamp}</strong>: ${rawPayload}`, "color-change");
+                    
+                    // Assume device is online if it sends light messages
+                    updateLampUI(lamp, "ONLINE", data);
+                } catch(e) {
+                    appendLog(`Raw light state on <strong>${topic}</strong>: ${rawPayload}`, "info");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
