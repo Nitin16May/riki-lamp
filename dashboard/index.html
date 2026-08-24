@@ -947,10 +947,12 @@
                     if (data.type === "colour" && data.colour) {
                         const colKey = data.colour.toUpperCase();
                         const hex = COLOR_MAP[colKey] || "#FFFFFF";
-                        appendLog(`<strong>${displayName}</strong> set color to <strong style="color: ${hex}; text-shadow: 0 0 8px ${hex}80">${colKey}</strong>`, "color-change");
+                        const moodInfo = MOOD_DICT[colKey] || { text: `glowing ${colKey}`, emoji: "💡" };
+                        appendLog(`<strong>${displayName}</strong>: <span style="color: ${hex}; font-weight: 500; text-shadow: 0 0 8px ${hex}40">${moodInfo.text}</span> ${moodInfo.emoji}`, "color-change");
                     } else if (data.type === "effect" && data.effect) {
                         const effName = data.effect.toUpperCase();
-                        appendLog(`<strong>${displayName}</strong> set effect to <strong style="background: linear-gradient(90deg, #ff5e7e, #ff9f68); -webkit-background-clip: text; -webkit-text-fill-color: transparent">${effName}</strong>`, "color-change");
+                        const moodInfo = MOOD_DICT[effName] || { text: `playing ${effName}`, emoji: "✨" };
+                        appendLog(`<strong>${displayName}</strong>: <span style="background: linear-gradient(90deg, #ff5e7e, #ff9f68); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600; text-shadow: 0 0 8px rgba(255, 94, 126, 0.2)">${moodInfo.text}</span> ${moodInfo.emoji}`, "color-change");
                     } else {
                         appendLog(`Light update from <strong>${displayName}</strong>: ${rawPayload}`, "color-change");
                     }
