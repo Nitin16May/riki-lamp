@@ -970,7 +970,7 @@
         });
 
         // --- Handle Incoming MQTT Messages ---
-        client.on('message', (topic, payload, packet) => {
+        client.on('message', (topic, payload) => {
             const rawPayload = payload.toString().trim();
             const parts = topic.split('/');
             
@@ -978,12 +978,6 @@
 
             const lamp = parts[2];     // 'chakri' or 'nikki'
             const msgType = parts[3];  // 'status' or 'light'
-
-            // Auto-retain helper: if the message was not retained (sent by the physical lamp),
-            // republish it with retain: true so future page loads (and lamp boots) sync immediately!
-            if (packet && !packet.retain && msgType === "light") {
-                client.publish(topic, payload, { retain: true });
-            }
 
             if (msgType === "status") {
                 const status = rawPayload.toUpperCase();
