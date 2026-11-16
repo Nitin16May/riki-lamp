@@ -108,6 +108,14 @@ void LEDManager::nextBrightness() {
     markDirty();
 }
 
+void LEDManager::setBrightness(uint8_t value) {
+    if (value < 5) value = 5;
+    _brightness = value;
+    FastLED.setBrightness(_brightness);
+    storage.saveBrightness(_brightness);
+    markDirty();
+}
+
 void LEDManager::lampOn() {
     _powerOn = true;
     storage.savePower(true);

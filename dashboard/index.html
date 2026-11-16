@@ -678,6 +678,190 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* --- Local Lamp Controls Card --- */
+        .local-lamp-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .local-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .local-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .local-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .local-badge.connected {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34C759;
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+
+        .local-badge.checking {
+            background: rgba(255, 204, 0, 0.15);
+            color: #FFCC00;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+
+        .local-badge.offline {
+            background: rgba(255, 59, 48, 0.15);
+            color: #FF3B30;
+            border: 1px solid rgba(255, 59, 48, 0.3);
+        }
+
+        .local-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            display: inline-block;
+        }
+
+        .local-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .power-btn {
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.4);
+            color: #FF3B30;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .power-btn.on {
+            background: rgba(52, 199, 89, 0.15);
+            border: 1px solid rgba(52, 199, 89, 0.4);
+            color: #34C759;
+        }
+
+        .power-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .brightness-presets {
+            display: flex;
+            gap: 6px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover, .preset-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .slider-val {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .local-disabled-notice {
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .local-controls-body.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -780,6 +964,50 @@
                     <div class="sender-selector">
                         <button id="btn-sender-chakri" class="sender-btn active" onclick="setSender('chakri')">Chakri</button>
                         <button id="btn-sender-nikki" class="sender-btn" onclick="setSender('nikki')">Nikki</button>
+                    </div>
+                </div>
+
+                <!-- Local Lamp (Chakri) Controls Card -->
+                <div class="local-lamp-card" id="local-lamp-card">
+                    <div class="local-card-header">
+                        <div class="local-card-title">
+                            <span>🏠</span> Chakri's Lamp (Local Controls)
+                        </div>
+                        <div id="local-status-badge" class="local-badge checking">
+                            <span class="local-dot"></span> Checking Wi-Fi...
+                        </div>
+                    </div>
+
+                    <div id="local-controls-body" class="local-controls-body">
+                        <!-- Power and Quick Presets Row -->
+                        <div class="local-controls-row">
+                            <div class="power-control-group">
+                                <button id="btn-power-toggle" class="power-btn on" onclick="toggleLocalPower()">
+                                    <span id="power-icon">⏻</span> <span id="power-text">Turn Off</span>
+                                </button>
+                            </div>
+                            <div class="brightness-presets">
+                                <button class="preset-btn" onclick="setLocalBrightnessPercent(25)">25%</button>
+                                <button class="preset-btn" onclick="setLocalBrightnessPercent(50)">50%</button>
+                                <button class="preset-btn" onclick="setLocalBrightnessPercent(75)">75%</button>
+                                <button class="preset-btn active" onclick="setLocalBrightnessPercent(100)">100%</button>
+                            </div>
+                        </div>
+
+                        <!-- Brightness Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Brightness</span>
+                                <span id="brightness-val-text" class="slider-val">100%</span>
+                            </div>
+                            <input type="range" id="local-brightness-slider" min="10" max="100" value="100" 
+                                oninput="onBrightnessSliderInput(this.value)" 
+                                onchange="setLocalBrightnessPercent(this.value)">
+                        </div>
+                    </div>
+
+                    <div id="local-disabled-notice" class="local-disabled-notice" style="display: none;">
+                        <span>🔒</span> Connect to your home Wi-Fi to adjust this lamp's brightness & power.
                     </div>
                 </div>
 
@@ -1303,6 +1531,163 @@
         renderControlGrids();
         setSender(currentSender);
 
+        // --- Local Lamp (Chakri) State & Controls ---
+        let localLampOn = true;
+        let localBrightness = 100;
+        let isLocalConnected = false;
+        const LOCAL_LAMP_IP = "192.168.29.85";
+
+        async function checkLocalLamp() {
+            const badge = document.getElementById('local-status-badge');
+            const controlsBody = document.getElementById('local-controls-body');
+            const notice = document.getElementById('local-disabled-notice');
+            if (!badge) return;
+
+            // 1. Try local HTTP ping
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1200);
+                const res = await fetch(`http://${LOCAL_LAMP_IP}/api/status`, {
+                    signal: controller.signal,
+                    mode: 'cors'
+                });
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    const data = await res.json();
+                    isLocalConnected = true;
+                    setLocalUiConnected(true, "Direct Wi-Fi 📶", data.power, Math.round((data.brightness / 255) * 100));
+                    return;
+                }
+            } catch (e) {
+                // Local HTTP not reachable or blocked by browser mixed content
+            }
+
+            // 2. Fallback: If Chakri's lamp is ONLINE on MQTT
+            if (chakriOnline) {
+                isLocalConnected = true;
+                setLocalUiConnected(true, "Online (Synced)", localLampOn, localBrightness);
+            } else {
+                isLocalConnected = false;
+                setLocalUiConnected(false, "Lamp Offline");
+            }
+        }
+
+        function setLocalUiConnected(connected, statusText, powerState = true, brightnessPct = 100) {
+            const badge = document.getElementById('local-status-badge');
+            const controlsBody = document.getElementById('local-controls-body');
+            const notice = document.getElementById('local-disabled-notice');
+            if (!badge) return;
+
+            if (connected) {
+                badge.className = "local-badge connected";
+                badge.innerHTML = `<span class="local-dot"></span> ${statusText}`;
+                if (controlsBody) controlsBody.classList.remove('disabled');
+                if (notice) notice.style.display = "none";
+
+                if (powerState !== undefined) {
+                    localLampOn = powerState;
+                    updatePowerButtonUi(powerState);
+                }
+                if (brightnessPct !== undefined) {
+                    localBrightness = brightnessPct;
+                    updateBrightnessUi(brightnessPct);
+                }
+            } else {
+                badge.className = "local-badge offline";
+                badge.innerHTML = `<span class="local-dot"></span> ${statusText}`;
+                if (controlsBody) controlsBody.classList.add('disabled');
+                if (notice) notice.style.display = "block";
+            }
+        }
+
+        function updatePowerButtonUi(on) {
+            const btn = document.getElementById('btn-power-toggle');
+            const text = document.getElementById('power-text');
+            if (!btn || !text) return;
+            if (on) {
+                btn.className = "power-btn on";
+                text.innerText = "Turn Off";
+            } else {
+                btn.className = "power-btn";
+                text.innerText = "Turn On";
+            }
+        }
+
+        function updateBrightnessUi(pct) {
+            const slider = document.getElementById('local-brightness-slider');
+            const text = document.getElementById('brightness-val-text');
+            if (slider) slider.value = pct;
+            if (text) text.innerText = `${pct}%`;
+
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                if (btn.innerText === `${pct}%`) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function onBrightnessSliderInput(val) {
+            const text = document.getElementById('brightness-val-text');
+            if (text) text.innerText = `${val}%`;
+        }
+
+        function toggleLocalPower() {
+            if (!isLocalConnected) return;
+            localLampOn = !localLampOn;
+            updatePowerButtonUi(localLampOn);
+
+            // Send via Local HTTP
+            try {
+                fetch(`http://${LOCAL_LAMP_IP}/api/power`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ on: localLampOn }),
+                    mode: 'no-cors'
+                }).catch(() => {});
+            } catch (e) {}
+
+            // Send via MQTT
+            if (client && client.connected) {
+                client.publish("riki/v1/chakri/local", JSON.stringify({ power: localLampOn }), { retain: true, qos: 1 });
+            }
+
+            showToast(localLampOn ? "💡 Chakri Lamp Turned On" : "🌙 Chakri Lamp Turned Off");
+            appendLog(`Chakri lamp power: <strong>${localLampOn ? 'ON' : 'OFF'}</strong>`, "info");
+        }
+
+        function setLocalBrightnessPercent(pct) {
+            if (!isLocalConnected) return;
+            pct = parseInt(pct, 10);
+            localBrightness = pct;
+            updateBrightnessUi(pct);
+
+            const rawVal = Math.round((pct / 100) * 255);
+
+            // Send via Local HTTP
+            try {
+                fetch(`http://${LOCAL_LAMP_IP}/api/brightness`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ brightness: rawVal }),
+                    mode: 'no-cors'
+                }).catch(() => {});
+            } catch (e) {}
+
+            // Send via MQTT
+            if (client && client.connected) {
+                client.publish("riki/v1/chakri/local", JSON.stringify({ brightness: rawVal }), { retain: true, qos: 1 });
+            }
+
+            showToast(`Chakri lamp brightness: ${pct}%`);
+            appendLog(`Chakri lamp brightness: <strong>${pct}%</strong>`, "info");
+        }
+
+        setInterval(checkLocalLamp, 4000);
+        setTimeout(checkLocalLamp, 1500);
+
         // --- Handle Incoming MQTT Messages ---
         client.on('message', (topic, payload) => {
             const rawPayload = payload.toString().trim();
@@ -1341,6 +1726,21 @@
                 } catch(e) {
                     appendLog(`Raw light state on <strong>${topic}</strong>: ${rawPayload}`, "info");
                 }
+            }
+            else if (msgType === "local") {
+                try {
+                    const data = JSON.parse(rawPayload);
+                    if (lamp === "chakri") {
+                        if (data.power !== undefined) {
+                            localLampOn = data.power;
+                            updatePowerButtonUi(data.power);
+                        }
+                        if (data.brightness !== undefined) {
+                            localBrightness = Math.round((data.brightness / 255) * 100);
+                            updateBrightnessUi(localBrightness);
+                        }
+                    }
+                } catch(e) {}
             }
         });
     </script>

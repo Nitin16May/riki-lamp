@@ -1,6 +1,7 @@
 #include "config.h"
 #include "diagnostics.h"
 #include "led.h"
+#include "local_server.h"
 #include "mqtt.h"
 #include "ota.h"
 #include "portal.h"
@@ -66,6 +67,22 @@ void onMqttMessage(const String& topic, JsonDocument& doc) {
         const char* url = doc["url"];
         if (url) {
             ota.updateFromUrl(url);
+        }
+        return;
+    }
+
+    if (topic.endsWith("/local")) {
+        if (doc.containsKey("power")) {
+            bool on = doc["power"];
+            if (on) {
+                led.lampOn();
+            } else {
+                led.lampOff();
+            }
+        }
+        if (doc.containsKey("brightness")) {
+            uint8_t b = doc["brightness"];
+            led.setBrightness(b);
         }
         return;
     }
@@ -141,6 +158,7 @@ void setup() {
     mqtt.onMessage(onMqttMessage);
 
     ota.begin();
+    localServer.begin();
 }
 
 void loop() {
@@ -156,4 +174,5 @@ void loop() {
     mqtt.loop();
     diagnostics.loop();
     ota.loop();
+    localServer.loop();
 }

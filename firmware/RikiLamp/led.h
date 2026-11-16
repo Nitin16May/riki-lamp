@@ -26,6 +26,9 @@ public:
     /// Advance through the local 10%, 20%, 30%, ..., and 100% brightness levels.
     void nextBrightness();
 
+    /// Set brightness directly (10-255).
+    void setBrightness(uint8_t value);
+
     /// Turn lamp output on while preserving colour and effect.
     void lampOn();
 
