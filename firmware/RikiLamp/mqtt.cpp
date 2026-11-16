@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <lwip/dns.h>
 
 MQTTManager mqtt;
 
@@ -14,8 +15,8 @@ constexpr uint16_t MQTT_PORT = 8883;
 constexpr char MQTT_USER[] = "rikilamp";
 constexpr char MQTT_PASS[] = "ChakriLovesNikki2903";
 
-constexpr char LAMP_ID[] = "nikki";
-constexpr char PARTNER_LAMP_ID[] = "chakri";
+constexpr char LAMP_ID[] = "chakri";
+constexpr char PARTNER_LAMP_ID[] = "nikki";
 
 constexpr char MQTT_TOPIC_ROOT[] = "riki/v1";
 constexpr unsigned long MQTT_RECONNECT_INTERVAL_MS = 5000;
@@ -118,6 +119,7 @@ bool MQTTManager::rememberSubscription(const String& topic) {
 
 void MQTTManager::subscribeDefaults() {
     subscribe(partnerWildcardTopic());
+    subscribe(buildTopic("ota"));
 }
 
 void MQTTManager::resubscribeAll() {
@@ -134,10 +136,32 @@ bool MQTTManager::connectBroker() {
         return false;
     }
 
+    // Ensure Google DNS & Cloudflare are registered in lwIP to prevent ISP DNS drops
+    ip_addr_t d1, d2;
+    d1.type = IPADDR_TYPE_V4;
+    d1.u_addr.ip4.addr = ipaddr_addr("8.8.8.8");
+    d2.type = IPADDR_TYPE_V4;
+    d2.u_addr.ip4.addr = ipaddr_addr("1.1.1.1");
+    dns_setserver(0, &d1);
+    dns_setserver(1, &d2);
+
     const String id = clientId();
     const String statusTopic = buildTopic("status");
 
-    Serial.println("Connecting MQTT...");
+    Serial.print("Resolving broker: ");
+    Serial.println(MQTT_BROKER);
+
+    IPAddress resolvedIp;
+    if (WiFi.hostByName(MQTT_BROKER, resolvedIp)) {
+        Serial.print("Broker IP: ");
+        Serial.println(resolvedIp);
+    } else {
+        Serial.println("DNS failed to resolve MQTT_BROKER!");
+    }
+
+    Serial.print("Connecting MQTT as ");
+    Serial.print(id);
+    Serial.println("...");
 
     const bool ok = _client.connect(
         id.c_str(),
@@ -174,7 +198,8 @@ void MQTTManager::begin() {
 
     activeInstance = this;
 
-    _wifiClient.setCACert(HIVEMQ_ROOT_CA);
+    // Use setInsecure to bypass clock sync requirement on ESP32 while keeping TLS port 8883 encryption
+    _wifiClient.setInsecure();
 
     _client.setServer(MQTT_BROKER, MQTT_PORT);
     _client.setCallback(MQTTManager::messageCallback);

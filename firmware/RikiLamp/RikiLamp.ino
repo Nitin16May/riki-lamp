@@ -2,6 +2,7 @@
 #include "diagnostics.h"
 #include "led.h"
 #include "mqtt.h"
+#include "ota.h"
 #include "portal.h"
 #include "riki_network.h"
 #include "storage.h"
@@ -56,11 +57,18 @@ void handleRemoteLightMessage(JsonDocument& doc) {
 }
 
 void onMqttMessage(const String& topic, JsonDocument& doc) {
-    if (!topic.endsWith("/light")) {
+    if (topic.endsWith("/light")) {
+        handleRemoteLightMessage(doc);
         return;
     }
 
-    handleRemoteLightMessage(doc);
+    if (topic.endsWith("/ota")) {
+        const char* url = doc["url"];
+        if (url) {
+            ota.updateFromUrl(url);
+        }
+        return;
+    }
 }
 
 void onTouchGesture(TouchGesture gesture) {
@@ -131,6 +139,8 @@ void setup() {
 
     mqtt.begin();
     mqtt.onMessage(onMqttMessage);
+
+    ota.begin();
 }
 
 void loop() {
@@ -145,4 +155,5 @@ void loop() {
 
     mqtt.loop();
     diagnostics.loop();
+    ota.loop();
 }
