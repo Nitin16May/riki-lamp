@@ -530,6 +530,154 @@
             100% { background-position: 0% 50%; }
         }
 
+        /* --- Remote Control Styles --- */
+        .control-section-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 24px 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sender-toggle-card {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .sender-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .sender-selector {
+            display: flex;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .sender-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .sender-btn.active {
+            background: linear-gradient(135deg, #FF5E7E, #FF9F68);
+            color: white;
+            box-shadow: 0 0 16px rgba(255, 94, 126, 0.4);
+        }
+
+        .mood-control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .mood-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: left;
+            user-select: none;
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .mood-btn:active {
+            transform: scale(0.96);
+        }
+
+        .mood-btn-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05);
+        }
+
+        .mood-btn-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mood-btn-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .mood-btn-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .send-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(23, 27, 36, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 24px;
+            border-radius: 30px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .send-toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 12px;
@@ -543,6 +691,19 @@
             .connection-badge {
                 padding: 6px 12px;
                 font-size: 11px;
+            }
+            .mood-control-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .mood-btn {
+                padding: 10px;
+                gap: 8px;
+            }
+            .mood-btn-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
             }
         }
     </style>
@@ -563,6 +724,7 @@
         <!-- Navigation Tabs -->
         <div class="tabs-nav">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Live Status</button>
+            <button class="tab-btn" onclick="switchTab('control')">Send Mood / Control</button>
             <button class="tab-btn" onclick="switchTab('dictionary')">Color Meanings</button>
         </div>
 
@@ -604,7 +766,42 @@
             </div>
         </div>
 
-        <!-- Panel 2: Color Dictionary -->
+        <!-- Panel 2: Remote Control -->
+        <div id="panel-control" class="tab-panel">
+            <div class="glass-card">
+                <!-- Sender Selector Card -->
+                <div class="sender-toggle-card">
+                    <div>
+                        <div class="sender-label">Active Sender Identity</div>
+                        <div id="sender-subtext" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                            Sending as <strong style="color: #FF5E7E;">Chakri</strong> will update Nikki's lamp & sync both devices.
+                        </div>
+                    </div>
+                    <div class="sender-selector">
+                        <button id="btn-sender-chakri" class="sender-btn active" onclick="setSender('chakri')">Chakri</button>
+                        <button id="btn-sender-nikki" class="sender-btn" onclick="setSender('nikki')">Nikki</button>
+                    </div>
+                </div>
+
+                <!-- Colors & Moods -->
+                <div class="control-section-title">
+                    <span>🎨</span> Choose a Color / Mood
+                </div>
+                <div class="mood-control-grid" id="colors-control-grid">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Animated Effects -->
+                <div class="control-section-title">
+                    <span>✨</span> Animated Effects
+                </div>
+                <div class="mood-control-grid" id="effects-control-grid">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 3: Color Dictionary -->
         <div id="panel-dictionary" class="tab-panel">
             <div class="glass-card">
                 <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">🎨 Color & Effect Meanings</h2>
@@ -728,6 +925,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Floating Feedback Toast -->
+    <div id="send-toast" class="send-toast">
+        <span>✨</span> <span id="toast-text">Mood sent successfully!</span>
     </div>
 
     <!-- Scripting and MQTT Web Client Connection -->
@@ -968,6 +1170,138 @@
             badgeText.innerText = "Offline";
             appendLog("Lost connection to broker. Reconnecting...", "info");
         });
+
+        // --- Remote Control State & Logic ---
+        let currentSender = localStorage.getItem('riki_active_sender') || 'chakri';
+
+        function setSender(sender) {
+            currentSender = sender;
+            localStorage.setItem('riki_active_sender', sender);
+
+            document.querySelectorAll('.sender-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-sender-${sender}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const displayName = sender.charAt(0).toUpperCase() + sender.slice(1);
+            const partnerName = sender === 'chakri' ? 'Nikki' : 'Chakri';
+            const subtextEl = document.getElementById('sender-subtext');
+            if (subtextEl) {
+                subtextEl.innerHTML = `Sending as <strong style="color: #FF5E7E;">${displayName}</strong> will update ${partnerName}'s lamp & sync both devices.`;
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('send-toast');
+            const toastText = document.getElementById('toast-text');
+            if (toast && toastText) {
+                toastText.innerText = message;
+                toast.classList.add('visible');
+                setTimeout(() => {
+                    toast.classList.remove('visible');
+                }, 2500);
+            }
+        }
+
+        function sendColor(colorKey) {
+            if (!client || !client.connected) {
+                showToast("⚠️ Not connected to broker yet");
+                return;
+            }
+
+            const displayName = currentSender.charAt(0).toUpperCase() + currentSender.slice(1);
+            const topic = `riki/v1/${currentSender}/light`;
+            const payload = JSON.stringify({ type: "colour", colour: colorKey });
+
+            client.publish(topic, payload, { retain: true, qos: 1 }, (err) => {
+                if (!err) {
+                    const mood = MOOD_DICT[colorKey] || { text: colorKey, emoji: "💡" };
+                    showToast(`Sent ${mood.emoji} ${mood.text}!`);
+                    appendLog(`<strong>${displayName}</strong> sent color <strong style="color: ${COLOR_MAP[colorKey] || '#FFF'}">${colorKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
+                    updateLampUI(currentSender, "ONLINE", { type: "colour", colour: colorKey });
+                } else {
+                    showToast("❌ Failed to send");
+                    appendLog(`Error sending color: ${err.message}`, "offline-event");
+                }
+            });
+        }
+
+        function sendEffect(effectKey) {
+            if (!client || !client.connected) {
+                showToast("⚠️ Not connected to broker yet");
+                return;
+            }
+
+            const displayName = currentSender.charAt(0).toUpperCase() + currentSender.slice(1);
+            const topic = `riki/v1/${currentSender}/light`;
+            const payload = JSON.stringify({ type: "effect", effect: effectKey });
+
+            client.publish(topic, payload, { retain: true, qos: 1 }, (err) => {
+                if (!err) {
+                    const mood = MOOD_DICT[effectKey] || { text: effectKey, emoji: "✨" };
+                    showToast(`Sent ${mood.emoji} ${mood.text}!`);
+                    appendLog(`<strong>${displayName}</strong> sent effect <strong>${effectKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
+                    updateLampUI(currentSender, "ONLINE", { type: "effect", effect: effectKey });
+                } else {
+                    showToast("❌ Failed to send");
+                    appendLog(`Error sending effect: ${err.message}`, "offline-event");
+                }
+            });
+        }
+
+        function renderControlGrids() {
+            const colorGrid = document.getElementById('colors-control-grid');
+            const effectGrid = document.getElementById('effects-control-grid');
+            if (!colorGrid || !effectGrid) return;
+
+            const colors = [
+                "WHITE", "WARM_WHITE", "RED", "PINK", "GREEN", "BLUE",
+                "YELLOW", "ORANGE", "PURPLE", "LIME", "TEAL", "CYAN",
+                "MAGENTA", "SKY_BLUE", "VIOLET", "GOLD"
+            ];
+
+            colorGrid.innerHTML = colors.map(key => {
+                const hex = COLOR_MAP[key] || "#FFFFFF";
+                const mood = MOOD_DICT[key] || { text: key, emoji: "💡" };
+                const formattedName = key.replace('_', ' ');
+                return `
+                    <button class="mood-btn" onclick="sendColor('${key}')">
+                        <div class="mood-btn-icon" style="background: ${hex}20; border: 1px solid ${hex}60; box-shadow: 0 0 12px ${hex}30;">
+                            ${mood.emoji}
+                        </div>
+                        <div class="mood-btn-info">
+                            <span class="mood-btn-name" style="color: ${hex === '#FFFFFF' ? '#FFF' : hex};">${formattedName}</span>
+                            <span class="mood-btn-desc">${mood.text}</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+
+            const effects = [
+                "RAINBOW", "HEARTBEAT", "CANDLE", "METEOR", "TWINKLE",
+                "FIRE", "AURORA", "OCEAN", "GALAXY", "POLICE",
+                "LIGHTNING", "SUNRISE", "BREATHING", "WAVE", "PULSE"
+            ];
+
+            effectGrid.innerHTML = effects.map(key => {
+                const mood = MOOD_DICT[key] || { text: key, emoji: "✨" };
+                const formattedName = key.replace('_', ' ');
+                return `
+                    <button class="mood-btn" onclick="sendEffect('${key}')">
+                        <div class="mood-btn-icon" style="background: linear-gradient(135deg, rgba(255,94,126,0.2), rgba(255,159,104,0.2)); border: 1px solid rgba(255,120,120,0.4);">
+                            ${mood.emoji}
+                        </div>
+                        <div class="mood-btn-info">
+                            <span class="mood-btn-name" style="background: linear-gradient(90deg, #ff9f68, #ff5e7e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${formattedName}</span>
+                            <span class="mood-btn-desc">${mood.text}</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Initialize remote control UI
+        renderControlGrids();
+        setSender(currentSender);
 
         // --- Handle Incoming MQTT Messages ---
         client.on('message', (topic, payload) => {
