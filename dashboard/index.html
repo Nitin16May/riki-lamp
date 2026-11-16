@@ -953,20 +953,6 @@
         <!-- Panel 2: Remote Control -->
         <div id="panel-control" class="tab-panel">
             <div class="glass-card">
-                <!-- Sender Selector Card -->
-                <div class="sender-toggle-card">
-                    <div>
-                        <div class="sender-label">Active Sender Identity</div>
-                        <div id="sender-subtext" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
-                            Sending as <strong style="color: #FF5E7E;">Chakri</strong> will update Nikki's lamp & sync both devices.
-                        </div>
-                    </div>
-                    <div class="sender-selector">
-                        <button id="btn-sender-chakri" class="sender-btn active" onclick="setSender('chakri')">Chakri</button>
-                        <button id="btn-sender-nikki" class="sender-btn" onclick="setSender('nikki')">Nikki</button>
-                    </div>
-                </div>
-
                 <!-- Local Lamp (Chakri) Controls Card -->
                 <div class="local-lamp-card" id="local-lamp-card">
                     <div class="local-card-header">
@@ -1400,24 +1386,6 @@
         });
 
         // --- Remote Control State & Logic ---
-        let currentSender = localStorage.getItem('riki_active_sender') || 'chakri';
-
-        function setSender(sender) {
-            currentSender = sender;
-            localStorage.setItem('riki_active_sender', sender);
-
-            document.querySelectorAll('.sender-btn').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-sender-${sender}`);
-            if (activeBtn) activeBtn.classList.add('active');
-
-            const displayName = sender.charAt(0).toUpperCase() + sender.slice(1);
-            const partnerName = sender === 'chakri' ? 'Nikki' : 'Chakri';
-            const subtextEl = document.getElementById('sender-subtext');
-            if (subtextEl) {
-                subtextEl.innerHTML = `Sending as <strong style="color: #FF5E7E;">${displayName}</strong> will update ${partnerName}'s lamp & sync both devices.`;
-            }
-        }
-
         function showToast(message) {
             const toast = document.getElementById('send-toast');
             const toastText = document.getElementById('toast-text');
@@ -1436,21 +1404,18 @@
                 return;
             }
 
-            const displayName = currentSender.charAt(0).toUpperCase() + currentSender.slice(1);
-            const topic = `riki/v1/${currentSender}/light`;
             const payload = JSON.stringify({ type: "colour", colour: colorKey });
 
-            client.publish(topic, payload, { retain: true, qos: 1 }, (err) => {
-                if (!err) {
-                    const mood = MOOD_DICT[colorKey] || { text: colorKey, emoji: "💡" };
-                    showToast(`Sent ${mood.emoji} ${mood.text}!`);
-                    appendLog(`<strong>${displayName}</strong> sent color <strong style="color: ${COLOR_MAP[colorKey] || '#FFF'}">${colorKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
-                    updateLampUI(currentSender, "ONLINE", { type: "colour", colour: colorKey });
-                } else {
-                    showToast("❌ Failed to send");
-                    appendLog(`Error sending color: ${err.message}`, "offline-event");
-                }
-            });
+            // Publish to both lamps so both update and stay in sync
+            client.publish("riki/v1/chakri/light", payload, { retain: true, qos: 1 });
+            client.publish("riki/v1/nikki/light", payload, { retain: true, qos: 1 });
+
+            const hex = COLOR_MAP[colorKey] || '#FFF';
+            const mood = MOOD_DICT[colorKey] || { text: colorKey, emoji: "💡" };
+            showToast(`Sent ${mood.emoji} ${mood.text} to both lamps!`);
+            appendLog(`Updated both lamps to <strong style="color: ${hex}">${colorKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
+            updateLampUI("chakri", "ONLINE", { type: "colour", colour: colorKey });
+            updateLampUI("nikki", "ONLINE", { type: "colour", colour: colorKey });
         }
 
         function sendEffect(effectKey) {
@@ -1459,21 +1424,17 @@
                 return;
             }
 
-            const displayName = currentSender.charAt(0).toUpperCase() + currentSender.slice(1);
-            const topic = `riki/v1/${currentSender}/light`;
             const payload = JSON.stringify({ type: "effect", effect: effectKey });
 
-            client.publish(topic, payload, { retain: true, qos: 1 }, (err) => {
-                if (!err) {
-                    const mood = MOOD_DICT[effectKey] || { text: effectKey, emoji: "✨" };
-                    showToast(`Sent ${mood.emoji} ${mood.text}!`);
-                    appendLog(`<strong>${displayName}</strong> sent effect <strong>${effectKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
-                    updateLampUI(currentSender, "ONLINE", { type: "effect", effect: effectKey });
-                } else {
-                    showToast("❌ Failed to send");
-                    appendLog(`Error sending effect: ${err.message}`, "offline-event");
-                }
-            });
+            // Publish to both lamps so both update and stay in sync
+            client.publish("riki/v1/chakri/light", payload, { retain: true, qos: 1 });
+            client.publish("riki/v1/nikki/light", payload, { retain: true, qos: 1 });
+
+            const mood = MOOD_DICT[effectKey] || { text: effectKey, emoji: "✨" };
+            showToast(`Sent ${mood.emoji} ${mood.text} to both lamps!`);
+            appendLog(`Updated both lamps to effect <strong>${effectKey}</strong>: ${mood.text} ${mood.emoji}`, "color-change");
+            updateLampUI("chakri", "ONLINE", { type: "effect", effect: effectKey });
+            updateLampUI("nikki", "ONLINE", { type: "effect", effect: effectKey });
         }
 
         function renderControlGrids() {
@@ -1529,7 +1490,6 @@
 
         // Initialize remote control UI
         renderControlGrids();
-        setSender(currentSender);
 
         // --- Local Lamp (Chakri) State & Controls ---
         let localLampOn = true;
