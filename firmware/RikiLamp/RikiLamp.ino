@@ -20,7 +20,7 @@ bool publishColour(LampColour colour) {
     doc["type"] = "colour";
     doc["colour"] = lampColourName(colour);
 
-    return mqtt.publish(mqtt.lightTopic(), doc);
+    return mqtt.publish(mqtt.lightTopic(), doc, true);
 }
 
 bool publishEffect(LampEffect effect) {
@@ -28,7 +28,7 @@ bool publishEffect(LampEffect effect) {
     doc["type"] = "effect";
     doc["effect"] = lampEffectName(effect);
 
-    return mqtt.publish(mqtt.lightTopic(), doc);
+    return mqtt.publish(mqtt.lightTopic(), doc, true);
 }
 
 void handleRemoteLightMessage(JsonDocument& doc) {

@@ -251,7 +251,7 @@ bool MQTTManager::connected() {
     return _active && _client.connected();
 }
 
-bool MQTTManager::publish(const String& topic, const JsonDocument& doc) {
+bool MQTTManager::publish(const String& topic, const JsonDocument& doc, bool retained) {
     if (!_client.connected()) {
         return false;
     }
@@ -259,10 +259,12 @@ bool MQTTManager::publish(const String& topic, const JsonDocument& doc) {
     String payload;
     serializeJson(doc, payload);
 
-    const bool ok = _client.publish(topic.c_str(), payload.c_str());
+    const bool ok = _client.publish(topic.c_str(), payload.c_str(), retained);
 
     if (ok) {
-        Serial.print("MQTT publish ");
+        Serial.print("MQTT publish (retained=");
+        Serial.print(retained ? "true" : "false");
+        Serial.print(") ");
         Serial.println(topic);
     }
 

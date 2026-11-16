@@ -14,7 +14,7 @@ public:
     void loop();
 
     bool connected();
-    bool publish(const String& topic, const JsonDocument& doc);
+    bool publish(const String& topic, const JsonDocument& doc, bool retained = false);
     bool subscribe(const String& topic);
 
     void onMessage(MessageCallback callback);
