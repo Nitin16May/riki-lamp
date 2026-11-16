@@ -119,6 +119,7 @@ bool MQTTManager::rememberSubscription(const String& topic) {
 
 void MQTTManager::subscribeDefaults() {
     subscribe(partnerWildcardTopic());
+    subscribe(lightTopic());
     subscribe(buildTopic("ota"));
     subscribe(buildTopic("local"));
 }

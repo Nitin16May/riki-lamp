@@ -68,17 +68,27 @@ void LEDManager::showInstant(const CRGB& colour) {
 }
 
 void LEDManager::setSolidColour(LampColour colour) {
+    if (_colour == colour && _effect == LampEffect::Static && _powerOn) {
+        return;
+    }
+    _powerOn = true;
     _colour = colour;
     _effect = LampEffect::Static;
     _effectStartMs = millis();
+    storage.savePower(true);
     storage.saveColour(_colour);
     storage.saveEffect(_effect);
     markDirty();
 }
 
 void LEDManager::setEffect(LampEffect effect) {
+    if (_effect == effect && _powerOn) {
+        return;
+    }
+    _powerOn = true;
     _effect = effect;
     _effectStartMs = millis();
+    storage.savePower(true);
     storage.saveEffect(_effect);
     markDirty();
 }
